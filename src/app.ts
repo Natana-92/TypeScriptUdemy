@@ -124,31 +124,62 @@ function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
 
     return adjDescriptor;
 }
-
-// ProjectList Class
-class ProjectList {
+// Component Base Class
+abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     templateElement: HTMLTemplateElement;
-    hostElement: HTMLDivElement;
-    element: HTMLElement;
-    assignedProjects: Project[];
+    hostElement: T;
+    element: U;
 
-    constructor(private type: "active" | "finished") {
+    constructor(
+        templateId: string,
+        hostElementId: string,
+        insertAtStart: boolean,
+        newElementId?: string
+    ) {
         this.templateElement = document.getElementById(
-            "project-list"
+            templateId
         )! as HTMLTemplateElement;
-        this.hostElement = document.getElementById("app")! as HTMLDivElement;
-        this.assignedProjects = [];
+        this.hostElement = document.getElementById(hostElementId)! as T;
+
         const importedNode = document.importNode(
             this.templateElement.content,
             true
         );
-        this.element = importedNode.firstElementChild as HTMLElement;
-        this.element.id = `${this.type}-projects`;
+        this.element = importedNode.firstElementChild as U;
+        if (newElementId) this.element.id = newElementId;
+
+        this.attach(insertAtStart);
+    }
+
+    private attach(insertAtBeginning: boolean) {
+        this.hostElement.insertAdjacentElement(
+            insertAtBeginning ? "afterbegin" : "beforeend",
+            this.element
+        );
+    }
+
+    abstract configure(): void;
+    abstract renderContent(): void;
+}
+
+// ProjectList Class
+class ProjectList extends Component<HTMLDivElement, HTMLElement> {
+    assignedProjects: Project[];
+
+    constructor(private type: "active" | "finished") {
+        super("project-list", "app", false, `${type}-projects`);
+        this.assignedProjects = [];
 
         // 뭔가가 변경이 된다면 해당 함수가 호출되어야한다?
         // listener로 등록한 함수들이 모두 호출되게 된다. state의 projects가 매개변수로 들어간다.
         // 따라서 assignedProject는 state의 project로 갱신되게 되고,
         // 갱신된 정보를 가지고 rendering을 하게된다.
+
+        this.configure();
+        this.renderContent();
+    }
+
+    configure() {
         projectState.addListener((projects: Project[]) => {
             // 여기서 렌더링되는 프로젝트는 all이다.
             // 따라서, filter를 걸어줘야한다.
@@ -162,9 +193,6 @@ class ProjectList {
             this.assignedProjects = relevantProjects;
             this.renderProjects();
         });
-
-        this.attach();
-        this.renderContent();
     }
 
     // add project 버튼을 눌렀을 때 rendering 되는 함수.
@@ -181,39 +209,22 @@ class ProjectList {
         }
     }
 
-    private renderContent() {
+    renderContent() {
         const listId = `${this.type}-projects-list`;
         this.element.querySelector("ul")!.id = listId;
         this.element.querySelector("h2")!.textContent =
             this.type.toUpperCase() + " PROJECTS";
     }
-
-    private attach() {
-        this.hostElement.insertAdjacentElement("beforeend", this.element);
-    }
 }
 
 // ProjectInput class
-class ProjectInput {
-    templateElement: HTMLTemplateElement;
-    hostElement: HTMLDivElement;
-    element: HTMLFormElement;
+class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
     titleInputElement: HTMLInputElement;
     descriptionInputElement: HTMLInputElement;
     peopleInputElement: HTMLInputElement;
 
     constructor() {
-        this.templateElement = document.getElementById(
-            "project-input"
-        )! as HTMLTemplateElement;
-        this.hostElement = document.getElementById("app")! as HTMLDivElement;
-
-        const importedNode = document.importNode(
-            this.templateElement.content,
-            true
-        );
-        this.element = importedNode.firstElementChild as HTMLFormElement;
-        this.element.id = "user-input";
+        super("project-input", "app", true, "user-input");
 
         this.titleInputElement = this.element.querySelector(
             "#title"
@@ -226,7 +237,13 @@ class ProjectInput {
         )! as HTMLInputElement;
 
         this.configure();
-        this.attach();
+    }
+
+    renderContent() {}
+
+    configure() {
+        // event lisnter
+        this.element.addEventListener("submit", this.submitHandler);
     }
 
     private gatherUserInput(): [string, string, number] | void {
@@ -279,15 +296,6 @@ class ProjectInput {
             projectState.addProject(title, description, people);
             this.clearInputs();
         }
-    }
-
-    private configure() {
-        // event lisnter
-        this.element.addEventListener("submit", this.submitHandler);
-    }
-
-    private attach() {
-        this.hostElement.insertAdjacentElement("afterbegin", this.element);
     }
 }
 
