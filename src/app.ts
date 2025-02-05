@@ -150,7 +150,16 @@ class ProjectList {
         // 따라서 assignedProject는 state의 project로 갱신되게 되고,
         // 갱신된 정보를 가지고 rendering을 하게된다.
         projectState.addListener((projects: Project[]) => {
-            this.assignedProjects = projects;
+            // 여기서 렌더링되는 프로젝트는 all이다.
+            // 따라서, filter를 걸어줘야한다.
+            const relevantProjects = projects.filter((prj) => {
+                if (this.type === "active") {
+                    return prj.status === ProjectStatus.Active;
+                } else {
+                    return prj.status === ProjectStatus.Finished;
+                }
+            });
+            this.assignedProjects = relevantProjects;
             this.renderProjects();
         });
 
@@ -163,6 +172,8 @@ class ProjectList {
         const listEl = document.getElementById(
             `${this.type}-projects-list`
         )! as HTMLUListElement;
+        // 모든 렌더링을 초기화하고 다시 진행한다.
+        listEl.innerHTML = "";
         for (const prjItem of this.assignedProjects) {
             const listItem = document.createElement("li");
             listItem.innerText = prjItem.title;
