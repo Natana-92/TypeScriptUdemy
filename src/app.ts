@@ -167,6 +167,31 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     abstract renderContent(): void;
 }
 
+// ProjectItem Class
+// 여기 있는 것을 구현하자
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {}
+
+class ElementRender {
+    listEl: HTMLUListElement;
+
+    constructor(elementId: string) {
+        this.listEl = document.getElementById(elementId)! as HTMLUListElement;
+        this.clearElement();
+    }
+
+    renderElement(assignedProjects: Project[]) {
+        for (const prjItem of assignedProjects) {
+            const listItem = document.createElement("li");
+            listItem.innerText = prjItem.title;
+            this.listEl?.appendChild(listItem);
+        }
+    }
+
+    private clearElement() {
+        this.listEl.innerHTML = "";
+    }
+}
+
 // ProjectList Class
 class ProjectList extends Component<HTMLDivElement, HTMLElement> {
     assignedProjects: Project[];
@@ -202,16 +227,8 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement> {
 
     // add project 버튼을 눌렀을 때 rendering 되는 함수.
     private renderProjects() {
-        const listEl = document.getElementById(
-            `${this.type}-projects-list`
-        )! as HTMLUListElement;
-        // 모든 렌더링을 초기화하고 다시 진행한다.
-        listEl.innerHTML = "";
-        for (const prjItem of this.assignedProjects) {
-            const listItem = document.createElement("li");
-            listItem.innerText = prjItem.title;
-            listEl?.appendChild(listItem);
-        }
+        const elementRender = new ElementRender(`${this.type}-projects-list`);
+        elementRender.renderElement(this.assignedProjects);
     }
 
     renderContent() {
