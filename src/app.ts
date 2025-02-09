@@ -169,7 +169,32 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
 
 // ProjectItem Class
 // 여기 있는 것을 구현하자
-class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {}
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
+    private singleProject: Project;
+    private appendElement: HTMLUListElement;
+    // private li
+
+    constructor(project: Project, appendElement: HTMLUListElement) {
+        super("single-project", "app", false, "render-list");
+        this.singleProject = project;
+        this.appendElement = appendElement;
+    }
+
+    renderContent() {
+        const titleElement = this.element.querySelector("h2");
+        if (titleElement) titleElement.innerText = this.singleProject.title!;
+
+        const descElement = this.element.querySelector("h3");
+        if (descElement) descElement.innerText = this.singleProject.description;
+
+        const peopleElement = this.element.querySelector("p");
+        if (peopleElement)
+            peopleElement.innerText = String(this.singleProject.people);
+
+        this.appendElement.append(this.element);
+    }
+    configure() {}
+}
 
 class ElementRender {
     listEl: HTMLUListElement;
@@ -181,9 +206,8 @@ class ElementRender {
 
     renderElement(assignedProjects: Project[]) {
         for (const prjItem of assignedProjects) {
-            const listItem = document.createElement("li");
-            listItem.innerText = prjItem.title;
-            this.listEl?.appendChild(listItem);
+            const renderProjectInner = new ProjectItem(prjItem, this.listEl);
+            renderProjectInner.renderContent();
         }
     }
 
